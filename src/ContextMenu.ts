@@ -1,30 +1,7 @@
 // Always needs this, as application loads this styles.
 //import '../style/contextmenu.css';
 import {EditorView} from 'prosemirror-view';
-
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-export type fnCB = (x: any) => void;
-
-export type Action = {
-  tooltip?: string;
-  image?: string;
-  handler?: fnCB;
-};
-
-export type CMElement = {
-  name?: string;
-  actions?: Action[];
-  defaultAction?: fnCB;
-  value?: string;
-  prefix?: string;
-  submenu?: ContextMenu;
-};
-
-export type CMGroup = {
-  endHR?: boolean;
-  scrollable?: boolean;
-  elements?: CMElement[];
-};
+import {Action, CMGroup, CMElement} from '@modusoperandi/licit-defs';
 
 const CONTXTMENU = 'context-menu';
 const SPAN = 'span';
@@ -85,7 +62,7 @@ export class ContextMenu {
     }
   }
 
-  addSubMenuItem(dom: HTMLElement, li: HTMLElement): void {
+  addSubMenuItem(groups: CMGroup[], li: HTMLElement): void {
     const arrow = document.createElement(SPAN);
     if (arrow) {
       arrow.className = 'arrow';
@@ -93,10 +70,12 @@ export class ContextMenu {
       li.appendChild(arrow);
     }
 
-    // TODO: recheck
-    dom.style.display = NONE;
+    const submenu = new ContextMenu(this.view);
+    submenu.addGroups(groups);
 
-    li.appendChild(dom);
+    submenu.dom.style.display = NONE;
+
+    li.appendChild(submenu.dom);
   }
 
   registerEvents(item: CMElement, li: HTMLElement): void {
@@ -146,7 +125,7 @@ export class ContextMenu {
       this.addItemText(item.name, li);
 
       if (item.submenu) {
-        this.addSubMenuItem(item.submenu.dom, li);
+        this.addSubMenuItem(item.submenu, li);
       }
 
       this.registerEvents(item, li);
@@ -199,7 +178,8 @@ export class ContextMenu {
 
       const offsetTop = 30;
       if (windowHeight - positionY < menuHeight) {
-        this.dom.style.top = String(windowHeight - menuHeight - offsetTop) + 'px';
+        this.dom.style.top =
+          String(windowHeight - menuHeight - offsetTop) + 'px';
       } else {
         this.dom.style.top = String(positionY - offsetTop) + 'px';
       }
@@ -211,7 +191,7 @@ export class ContextMenu {
   }
 
   // get the position to show context menu
-  getPosition(e: MouseEvent): {x: number, y: number} {
+  getPosition(e: MouseEvent): {x: number; y: number} {
     let posX = 0;
     let posY = 0;
     if (e.pageX || e.pageY) {
